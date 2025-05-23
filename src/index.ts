@@ -23,8 +23,8 @@ const settings = {
   pingPongTextures: null,
   thresholdTask: null,
   task: null,
-  textureWidth: 512,
-  textureHeight: 512,
+  textureWidth: 1024,
+  textureHeight: 1024,
   uniforms: null,
   sortLimitsBuffer: null,
 };
@@ -46,7 +46,11 @@ const videoFrame = () => {
   renderer.device.queue.copyExternalImageToTexture(
     {
       source: video,
-      flipY: true
+      flipY: true,
+      origin: [
+        video.videoWidth - settings.textureWidth,
+        video.videoHeight - settings.textureHeight,
+      ]
     },
     {
       texture: texA,
