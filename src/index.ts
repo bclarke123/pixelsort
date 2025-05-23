@@ -23,8 +23,8 @@ const settings = {
   pingPongTextures: null,
   thresholdTask: null,
   task: null,
-  textureWidth: 1024,
-  textureHeight: 1024,
+  textureWidth: 600,
+  textureHeight: 600,
   uniforms: null,
   sortLimitsBuffer: null,
 };
@@ -40,25 +40,19 @@ const tex = () => renderer.createTexture({
 });
 
 const videoFrame = () => {
-  const { video, pingPongTextures } = settings;
+  const { video, pingPongTextures, textureWidth, textureHeight } = settings;
   const texA = pingPongTextures[0].texture.texture;
 
   renderer.device.queue.copyExternalImageToTexture(
     {
       source: video,
       flipY: true,
-      origin: [
-        video.videoWidth - settings.textureWidth,
-        video.videoHeight - settings.textureHeight,
-      ]
     },
     {
       texture: texA,
     },
     [
-      settings.textureWidth,
-      settings.textureHeight,
-      1
+      textureWidth, textureHeight, 1
     ]
   );
 
@@ -230,7 +224,7 @@ const start = async () => {
     { name: "u_k_stage", value: 0, type: "u32" },
     { name: "u_j_pass_power", value: 0, type: "u32" },
     { name: "sort_direction_is_ascending", value: 1, type: "u32" },
-    { name: "sort_key_channel", value: 2, type: "u32" },
+    { name: "sort_key_channel", value: 4, type: "u32" },
   ];
 
   const task = renderer.createComputeTask({
