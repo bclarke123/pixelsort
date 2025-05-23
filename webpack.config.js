@@ -28,6 +28,7 @@ module.exports = {
       {
         test: /\.scss$/,
         use: ["style-loader", "css-loader", "sass-loader"],
+        exclude: /node_modules/,
       },
     ],
   },
@@ -38,9 +39,9 @@ module.exports = {
     clean: true,
     filename: "index.js",
     path: path.resolve(__dirname, "dist"),
-    library: "tinygpu",
-    libraryTarget: "umd",
-    umdNamedDefine: true,
+    // library: "tinygpu",
+    // libraryTarget: "umd",
+    // umdNamedDefine: true,
   },
   plugins: [new HtmlWebpackPlugin()],
 };
