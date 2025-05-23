@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "webpack serve"
+    "dev": "webpack serve",
+    "build": "NODE_ENV=PRODUCTION webpack"
   },
   "keywords": [],
   "author": "",
@@ -27,7 +28,8 @@
     "webpack-dev-server": "^5.2.1"
   },
   "dependencies": {
-    "tinygpu": "link:../tinygpu",
+    "@g3rmania/tinygpu": "^0.1.7",
+    "dat.gui": "^0.7.9",
     "wgpu-matrix": "^3.4.0"
   }
 }
