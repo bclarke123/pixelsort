@@ -241,6 +241,8 @@ const start = async () => {
     ]
   });
 
+  task.uniformManager.update();
+
   settings.scene = scene;
   settings.camera = camera;
   settings.renderer = renderer;
