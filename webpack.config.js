@@ -12,6 +12,7 @@ module.exports = {
   devtool,
   devServer: {
     static: "./dist",
+    server: "https"
   },
   module: {
     rules: [
