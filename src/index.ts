@@ -23,8 +23,8 @@ const settings = {
   pingPongTextures: null,
   thresholdTask: null,
   task: null,
-  textureWidth: 1024,
-  textureHeight: 1024,
+  textureWidth: 512,
+  textureHeight: 512,
   uniforms: null,
   sortLimitsBuffer: null,
 };
