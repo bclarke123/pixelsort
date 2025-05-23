@@ -2,6 +2,8 @@ import * as tinygpu from "tinygpu";
 
 import "./sass/main.scss";
 
+import renderShader from "./shaders/render.wgsl";
+
 const video = document.createElement("video");
 const canvas = document.createElement("canvas");
 document.body.appendChild(canvas);
@@ -11,19 +13,41 @@ const settings = {
   scene: null,
   renderer: null,
   camera: null,
-  textures: null,
+  video: null,
   material: null,
+  pingPongTextures: null,
 };
 
 const videoFrame = () => {
-  requestAnimationFrame(animate);
+  const { video, pingPongTextures } = settings;
+  const texA = pingPongTextures[0].texture.texture;
+
+  renderer.device.queue.copyExternalImageToTexture(
+    {
+      source: video,
+      flipY: true
+    },
+    {
+      texture: texA,
+    },
+    [256, 256, 1]
+  );
+
+  video.requestVideoFrameCallback(videoFrame);
+  animate();
 };
 
 const animate = () => {
-  const { scene, renderer, camera, material, textures } = settings;
-  material.updateTextures(textures);
+  const { scene, renderer, camera, material, pingPongTextures } = settings;
+
   renderer.render(scene, camera);
-  // requestAnimationFrame(animate);
+
+  settings.pingPongTextures = [
+    pingPongTextures[1],
+    pingPongTextures[0]
+  ];
+
+  material.updateTextures(pingPongTextures);
 };
 
 const start = async () => {
@@ -32,42 +56,48 @@ const start = async () => {
   const camera = renderer.createOrthographicCamera();
 
   const stream = await navigator.mediaDevices.getUserMedia({
-    video: true,
+    video: {
+      facingMode: 'environment',
+      width: { min: 256, ideal: 256, max: 256 },
+      height: { min: 256, ideal: 256, max: 256 },
+      advanced: [
+        {
+          aspectRatio: 1,
+        },
+      ],
+    },
+
   });
   video.srcObject = stream;
 
+  const texA = renderer.createTexture({
+    size: { width: 256, height: 256 },
+    format: "rgba8unorm",
+    usage:
+      GPUTextureUsage.TEXTURE_BINDING |
+      GPUTextureUsage.COPY_DST |
+      GPUTextureUsage.RENDER_ATTACHMENT |
+      GPUTextureUsage.STORAGE_BINDING,
+  });
+
+  const texB = renderer.createTexture({
+    size: { width: 256, height: 256 },
+    format: "rgba8unorm",
+    usage:
+      GPUTextureUsage.TEXTURE_BINDING |
+      GPUTextureUsage.COPY_DST |
+      GPUTextureUsage.RENDER_ATTACHMENT |
+      GPUTextureUsage.STORAGE_BINDING,
+  });
+
   const textures = [
-    { texture: new tinygpu.textures.VideoTexture(renderer.device, video) },
-  ];
+    { texture: texA },
+    { texture: texB }
+  ]
 
   const geo = renderer.createGeometry(tinygpu.geometry.BigTriangle);
   const mat = renderer.createMaterial(tinygpu.material.ShaderMaterial, {
-    code: `
-
-@group(BG_UNIFORMS) @binding(0) var texSampler: sampler;
-@group(BG_UNIFORMS) @binding(1) var video: texture_external;
-
-struct VSOut {
-  @builtin(position) position: vec4<f32>,
-  @location(0) uv: vec2<f32>
-}
-
-@vertex
-fn vs_main(in: VSIn) -> VSOut {
-  return VSOut (
-    projectionViewModel() * vec4(in.position, 1.0),
-    in.uv
-  );
-}
-
-@fragment
-fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
-  let dimensions = vec2<f32>(textureDimensions(video));
-  let uv = arFill(dimensions, scene_uniforms.resolution, in.uv);
-  return textureSampleBaseClampToEdge(video, texSampler, vec2(uv.x, 1.0 - uv.y));
-}
-
-    `,
+    code: renderShader,
     textures,
   });
 
@@ -77,8 +107,11 @@ fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
   settings.scene = scene;
   settings.camera = camera;
   settings.renderer = renderer;
-  settings.textures = textures;
+  settings.pingPongTextures = textures;
   settings.material = mat;
+  settings.video = video;
+
+  requestAnimationFrame(animate);
 
   video.requestVideoFrameCallback(videoFrame);
   await video.play();
