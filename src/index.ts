@@ -1,5 +1,7 @@
-import * as tinygpu from "tinygpu";
+import * as tinygpu from "@g3rmania/tinygpu";
 import { vec2, vec3 } from "wgpu-matrix";
+
+import * as dat from "dat.gui";
 
 import "./sass/main.scss";
 
@@ -69,6 +71,8 @@ const swap = () => {
 const process = () => {
   const { pingPongTextures, thresholdTask, task } = settings;
 
+  thresholdTask.uniformManager.update();
+
   renderer.compute([thresholdTask]);
 
   const N = settings.textureWidth;
@@ -100,6 +104,56 @@ const animate = () => {
   swap();
 
   requestAnimationFrame(animate);
+};
+
+const addGui = () => {
+
+  const channels = [
+    "Red",
+    "Green",
+    "Blue",
+    "Alpha",
+    "Luminance"
+  ];
+
+  const sortDirections = [
+    "Ascending",
+    "Descending"
+  ];
+
+  const props = {
+    "threshold": 0.5,
+    "threshold_type": "Luminance",
+    "sort_direction": "Descending",
+    "sort_channel": "Luminance",
+  };
+
+  const gui = new dat.GUI();
+
+  gui.add(props, "threshold").name("Threshold").min(0).max(1).step(0.01).onChange((value) => {
+    settings.thresholdTask.uniformManager.updateUniform(
+      { name: "threshold_value", value, }
+    );
+  });
+
+  gui.add(props, "threshold_type", channels).name("Threshold Channel").onChange((value) => {
+    settings.thresholdTask.uniformManager.updateUniform(
+      { name: "sort_key_channel", value: channels.indexOf(value) }
+    );
+  });
+
+  gui.add(props, "sort_direction", sortDirections).name("Sort Direction").onChange((value) => {
+    settings.task.uniformManager.updateUniform(
+      { name: "sort_direction_is_ascending", value: sortDirections.indexOf(value) }
+    );
+  });
+
+  gui.add(props, "sort_channel", channels).name("Sort Channel").onChange((value) => {
+    settings.task.uniformManager.updateUniform(
+      { name: "sort_key_channel", value: channels.indexOf(value) }
+    );
+  });
+
 };
 
 const start = async () => {
@@ -157,7 +211,7 @@ const start = async () => {
     ],
     uniforms: [
       { name: "texture_dim", value: vec2.create(textureWidth, textureHeight), type: "vec2" },
-      { name: "threshold_value", value: 0.9, type: "f32" },
+      { name: "threshold_value", value: 0.5, type: "f32" },
       { name: "sort_key_channel", value: 4, type: "u32" }
     ],
     buffers: [
@@ -172,7 +226,7 @@ const start = async () => {
     { name: "u_k_stage", value: 0, type: "u32" },
     { name: "u_j_pass_power", value: 0, type: "u32" },
     { name: "sort_direction_is_ascending", value: 1, type: "u32" },
-    { name: "sort_key_channel", value: 4, type: "u32" },
+    { name: "sort_key_channel", value: 2, type: "u32" },
   ];
 
   const task = renderer.createComputeTask({
@@ -198,6 +252,8 @@ const start = async () => {
   settings.thresholdTask = thresholdTask;
   settings.task = task;
   settings.uniforms = uniforms;
+
+  addGui();
 
   requestAnimationFrame(animate);
 
